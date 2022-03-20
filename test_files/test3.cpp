@@ -1,9 +1,8 @@
 const bool boop = true;			// объявление глобальной константы
 
-bool kek (int a, short b_) {	// объявление функции
-
-	boop = false;				// ИЗМЕНЕНИЕ КОНСТАНТЫ
-	return boop;				// возврат из функции
+bool kek (int a, bool b) {		// объявление функции
+	int yem = -15;
+	return a + boop * b;		// возврат из функции
 }
 
 int main()						// функция main

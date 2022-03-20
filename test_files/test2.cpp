@@ -1,29 +1,24 @@
 const bool boop = true;			// объявление глобальной константы
 
-bool kek (int a, short b_) {	// объявление функции
-
-	return boop;				// возврат из функции
+bool kek (int a, bool b) {		// объявление функции
+	return b + a;				// возврат из функции
 }
+
+int rer = 1;
 
 int main()						// функция main
 {
-	int a = kek(1, 2);
-	//kek1(10, -100);				// ИНДЕНТИФИКАТОР НЕ ОПРЕДЕЛЕН
+	int a = kek(1, boop);
+	
+	const int dva = 2;
 	
 	switch (a)					// объявление switch
 	{
-	case 1:						// case c выходом
-		int s1 = true;
+	case 1:
+		a = rer + a;
 		break;
-	//case 
-	case 3:						// case без выхода
-		int s1 = 14;
-		int s3 = 400;	
-	default:					//default c выходом
-		int s5 = 0;
-		int s6 = s3;			// ИНДЕНТИФИКАТОР НЕ ОПРЕДЕЛЕН
-		int s7 = s5 + (s6 * a);
-		break;
+	case 2:
+		rer = dva;
 	}
 	
 	return 0;

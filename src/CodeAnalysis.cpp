@@ -240,6 +240,8 @@ void SyntaxAnalyser::CompStat()
 	lex = scanner->NextScan();					// }
 
 	semTree->SetCurrentNode(node);				//
+
+	// Удаляем узлы после выхода за "}"
 }
 
 void SyntaxAnalyser::Switch()

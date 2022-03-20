@@ -2,6 +2,21 @@
 #include "../../Types.h"
 #include <utility>
 
+union DataValue
+{
+	DataValue(int value)
+	{
+		this->integer = value;
+	}
+
+	DataValue(bool value)
+	{
+		this->boolean = value;
+	}
+	bool boolean;
+	int integer;
+};
+
 struct Data
 {
 	Data(DataType type, int value)
@@ -69,7 +84,6 @@ struct Data
 	void SetValue(int value)
 	{
 		delete Value;
-
 		switch (Type)
 		{
 		case DataType::Int:
@@ -91,24 +105,28 @@ struct Data
 		default:
 			Value = nullptr;
 			break;
-		}
-		
+		}		
 	}
 
-	union DataValue
+	std::string GetValue() const
 	{
-		DataValue(int value)
+		switch (Type)
 		{
-			this->integer = value;
-		}
+		case DataType::Int:
+			return std::to_string(Value->integer);
 
-		DataValue(bool value)
-		{
-			this->boolean = value;
+		case DataType::Bool:
+			if (Value->boolean == true)
+				return "True";
+			else
+				return "False";
+		default:
+			return "null";
 		}
-		bool boolean;
-		int integer;
-	} *Value;
+	}
+
+//protected:
+	DataValue *Value;
 
 	DataType Type;
 };

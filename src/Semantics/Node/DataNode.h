@@ -33,6 +33,7 @@ struct DataNode : Node
 protected:
 	void Print(std::ostream& out) const override
 	{
-		out << "Data Node: Type = " << DataTypeToString(Value.Type) << ", Id = " << Identifier << ", Is Initialized = " << IsInitialized << ", Is Const = " << IsConst << "\n";
+		//out << "Data Node: Type = " << DataTypeToString(Value.Type) << ", Id = " << Identifier << ", Is Initialized = " << IsInitialized << ", Is Const = " << IsConst << "\n";
+		out << "Data Node: Type = " << DataTypeToString(Value.Type) << ", Id = " << Identifier << ", Is Const = " << IsConst << ", Value = " << Value.GetValue() << std::endl;
 	}
 };

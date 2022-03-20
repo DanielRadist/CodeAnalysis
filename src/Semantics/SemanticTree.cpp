@@ -159,8 +159,23 @@ void SemanticTree::AddScope()
 	SetCurrentNode(_currNode->RightChild.get());
 }
 
+void SemanticTree::DeleteSubTree(Node* node)
+{
+	node->RightChild.reset();
+}
+
+void SemanticTree::DeleteAllTree()
+{
+	_rootNode.reset();
+}
+
 void SemanticTree::Print(std::ostream& out) const
 {
+	if (_rootNode == nullptr)
+	{
+		out << "null\n";
+		return;
+	}
 	_rootNode->RecPrint(out);
 }
 
@@ -169,7 +184,6 @@ Node* SemanticTree::FindNodeUp(const std::string& id) const
 	auto node = _currNode;
 	while (node->Parent && node->Identifier != id) {
 		node = node->Parent;
-
 	}
 	return node;
 }

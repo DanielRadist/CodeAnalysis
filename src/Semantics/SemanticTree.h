@@ -35,6 +35,8 @@ public:
 	Node* AddEmpty();
 
 	void AddScope();
+	static void DeleteSubTree(Node* node);
+	void DeleteAllTree();
 	void Print(std::ostream& out) const;
 
 	Node* FindNodeUp(const std::string& id) const;

@@ -31,6 +31,13 @@ void SyntaxAnalyser::Program()
 			WrongType(lex);
 		lex = scanner->LookForward(1);
 	}
+	std::cout << "--- Pre END code ---" << std::endl;
+	std::cout << "Semantic tree:\n";
+	semTree->Print(std::cout);
+
+	semTree->DeleteAllTree();
+
+	std::cout << "--- Post END code --" << std::endl;
 	std::cout << "Semantic tree:\n";
 	semTree->Print(std::cout);
 }
@@ -225,7 +232,7 @@ void SyntaxAnalyser::CompStat()
 	if (lex.type != LexemeType::OpenBrace)
 		WrongExpected("{", lex);
 
-	const auto node = semTree->AddEmpty();		// Создаем пустой узел
+	const auto saveNode = semTree->AddEmpty();	// Создаем пустой узел
 	semTree->AddScope();						// идем ниже
 
 	lex = scanner->LookForward(1);
@@ -239,9 +246,19 @@ void SyntaxAnalyser::CompStat()
 	}
 	lex = scanner->NextScan();					// }
 
-	semTree->SetCurrentNode(node);				//
+	semTree->SetCurrentNode(saveNode);			// вышли из составного, переходим на уровень выше
+	
+	// Удаляем узлы после выхода за состовной оператор
+	std::cout << "-----  -Pre-   -----" << std::endl;
+	std::cout << "Semantic tree:\n";
+	semTree->Print(std::cout);
 
-	// Удаляем узлы после выхода за "}"
+	semTree->DeleteSubTree(saveNode);
+
+	std::cout << "-----  -Post-  -----" << std::endl;
+	std::cout << "Semantic tree:\n";
+	semTree->Print(std::cout);
+	std::cout << "====================" << std::endl;
 }
 
 void SyntaxAnalyser::Switch()

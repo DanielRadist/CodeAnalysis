@@ -22,6 +22,7 @@ private:
 	inline void HandleStringWord();
 	inline void HandleDecNum();
 	inline void HandleErrWord();
+	inline void HandleDoubleChar(LexemeType firstLexeme, std::string str, LexemeType secondLexeme);
 	inline void HandleDoubleChar(LexemeType firstLexeme, char nextChar, LexemeType secondLexeme);
 
 	inline bool NextChar();
@@ -108,23 +109,23 @@ inline Lexeme Scanner::NextScan()
 			_lexeme.type = LexemeType::CloseBrace;
 			break;
 		case '*':
-			HandleDoubleChar(LexemeType::Mul, '=', LexemeType::Assign);
+			HandleDoubleChar(LexemeType::Mul, '=', LexemeType::MulAssign);
 			break;
 		case '/':
-			HandleDoubleChar(LexemeType::Div, '=', LexemeType::Assign);
+			HandleDoubleChar(LexemeType::Div, '=', LexemeType::DivAssign);
 			break;
 		case '%':
-			HandleDoubleChar(LexemeType::Mod, '=', LexemeType::Assign);
+			HandleDoubleChar(LexemeType::Mod, '=', LexemeType::ModAssign);
 			break;
 		case '+':
 			HandleDoubleChar(LexemeType::Add, '+', LexemeType::Inc);
 			if (_lexeme.type == LexemeType::Add)
-				HandleDoubleChar(LexemeType::Add, '=', LexemeType::Assign);
+				HandleDoubleChar(LexemeType::Add, "+=", LexemeType::AddAssign);
 			break;
 		case '-':
 			HandleDoubleChar(LexemeType::Sub, '-', LexemeType::Dec);
 			if (_lexeme.type == LexemeType::Sub)
-				HandleDoubleChar(LexemeType::Sub, '=', LexemeType::Assign);
+				HandleDoubleChar(LexemeType::Sub, "-=", LexemeType::SubAssign);
 			break;
 		case '>':
 			HandleDoubleChar(LexemeType::RT, '=', LexemeType::RTE);
@@ -140,7 +141,7 @@ inline Lexeme Scanner::NextScan()
 			HandleDoubleChar(LexemeType::Assign, '=', LexemeType::EQ);
 			break;
 		case '!':
-			HandleDoubleChar(LexemeType::Err, '=', LexemeType::NE);
+			HandleDoubleChar(LexemeType::Not, '=', LexemeType::NE);
 			break;
 		case '&':
 			HandleDoubleChar(LexemeType::Err, '&', LexemeType::And);
@@ -229,6 +230,18 @@ inline void Scanner::HandleErrWord()
 		NextChar();
 	}
 	_lexeme.type = LexemeType::Err;
+}
+
+inline void Scanner::HandleDoubleChar(LexemeType firstLexeme, std::string str, LexemeType secondLexeme)
+{
+	NextChar();
+	if (_lexeme.str == str)
+	{
+		NextChar();
+		_lexeme.type = secondLexeme;
+	}
+	else
+		_lexeme.type = firstLexeme;
 }
 
 inline void Scanner::HandleDoubleChar(LexemeType firstLexeme, char nextChar, LexemeType secondLexeme)

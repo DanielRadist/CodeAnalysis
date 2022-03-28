@@ -6,7 +6,7 @@ int main()
 {
 	setlocale(LC_ALL, "rus");
 	//std::ofstream fout("output.txt");
-	SyntaxAnalyser analyser("test_files/test5.cpp");		// файл который проверяем
+	SyntaxAnalyser analyser("test_files/test6.cpp");		// файл который проверяем
 	try 
 	{
 		analyser.Program();						// вызов анализатора для проверки семантического уровня

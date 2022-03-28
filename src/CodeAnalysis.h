@@ -29,6 +29,7 @@ private:
 	Data* MultExpr();
 	Data* PrefixExpr();
 	Data* PostfixExpr();
+	Data* UnaryNot();
 	Data* PrimExpr();
 
 	Data* CheckOperationResult(Data* left, Data* right, const Lexeme& lex) const;

@@ -25,7 +25,7 @@ struct DataNode : Node
 	}
 
 	DataType GetDataType() const override { return Value->Type; }
-	Data* GetData() override { return Value; }
+	Data* GetData() override { return new Data(Value); }
 	SemanticType GetSemanticType() const override 
 	{ 
 		if (IsConst)
@@ -43,6 +43,6 @@ protected:
 	void Print(std::ostream& out) const override
 	{
 		//out << "Data Node: Type = " << DataTypeToString(Value.Type) << ", Id = " << Identifier << ", Is Initialized = " << IsInitialized << ", Is Const = " << IsConst << "\n";
-		out << "Data Node: Type = " << DataTypeToString(Value->Type) << ", Id = " << Identifier << ", Is Const = " << IsConst << ", Value = " << Value->GetValue() << std::endl;
+		out << "Data Node: Type = " << DataTypeToString(Value->Type) << ", Id = " << Identifier << ", Is Const = " << IsConst << ", Value = " << Value->GetValueToString() << std::endl;
 	}
 };

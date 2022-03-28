@@ -220,9 +220,13 @@ void SyntaxAnalyser::Stat()
 		scanner->NextScan();
 		Expr();
 	}
-	else {
+	else 
+	{
 		if (lex.type != LexemeType::SemCol)
-			Expr();
+		{
+			auto val = Expr();
+			int a = 5;							// TODO:
+		}
 		lex = scanner->NextScan();				// ;
 		if (lex.type != LexemeType::SemCol)
 			WrongExpected(";", lex);
@@ -353,7 +357,8 @@ void SyntaxAnalyser::Switch()
 Data* SyntaxAnalyser::Expr()
 {
 	auto lex = scanner->LookForward(2);
-	if (lex.type == LexemeType::Assign)
+	if (lex.type == LexemeType::Assign || lex.type == LexemeType::AddAssign || lex.type == LexemeType::SubAssign
+		|| lex.type == LexemeType::MulAssign || lex.type == LexemeType::DivAssign || lex.type == LexemeType::ModAssign)
 	{
 		lex = scanner->NextScan();									// Scan Id
 		if (lex.type != LexemeType::Id)
@@ -368,18 +373,40 @@ Data* SyntaxAnalyser::Expr()
 
 		const auto left = node->GetData();							// Получить тип и значение данных левой части
 		const auto leftSemanticType = node->GetSemanticType();
-
+		
 		lex = scanner->NextScan();									// Scan =
 
-		const auto right = EqualExpr();								// Получить тип из дерева правого выражения
+		const auto right = OrExpr();								// Получить из дерева правого выражения
 
 		if (!semTree->CheckCastable(right->Type, left->Type))		// если не приводятся или попытка присвоить константе
 			UncastableError(left->Type, right->Type, lex);
 		if (leftSemanticType == SemanticType::Const)
-			UncastableConstError(left->Type, right->Type, lex);
+			UncastableConstError(left->Type, right->Type, lex);	
 
-		//semTree->SetVariableInitialized(node);
-		semTree->SetVariableValue(node, right);						
+		switch (lex.type)
+		{
+		case LexemeType::Assign:
+			break;
+		case LexemeType::AddAssign:
+			right->SetValue(left->GetValueToInt() + right->GetValueToInt());
+			break;
+		case LexemeType::SubAssign:
+			right->SetValue(left->GetValueToInt() - right->GetValueToInt());
+			break;
+		case LexemeType::MulAssign:
+			right->SetValue(left->GetValueToInt() * right->GetValueToInt());
+			break;
+		case LexemeType::DivAssign:
+			right->SetValue(left->GetValueToInt() / right->GetValueToInt());
+			break;
+		case LexemeType::ModAssign:
+			right->SetValue(left->GetValueToInt() % right->GetValueToInt());
+			break;
+		default:
+			break;
+		}
+
+		semTree->SetVariableValue(node, right);
 
 		return left;
 	}
@@ -529,7 +556,7 @@ Data* SyntaxAnalyser::PostfixExpr()
 		if (funcNode->GetSemanticType() != SemanticType::Func)			
 			UseNotFuncError(funcNode->Identifier, lex);
 
-		scanner->NextScan();											// Scan (
+		scanner->NextScan();									// Scan (
 
 		auto paramsTypes = semTree->GetFuncParams(funcNode);
 		size_t argsCount = 0;
@@ -551,26 +578,26 @@ Data* SyntaxAnalyser::PostfixExpr()
 				if (lex.type != LexemeType::Comma)
 					break;
 
-				lex = scanner->NextScan();								// Scan ,
+				lex = scanner->NextScan();						// Scan ,
 			}
 		}
 
 		if (argsCount != paramsTypes.size())
 			WrongArgsCount(paramsTypes.size(), argsCount, funcNode->Identifier, lex);
 
-		scanner->NextScan();											// Scan )
+		scanner->NextScan();									// Scan )
 		if (lex.type != LexemeType::ClosePar)
 			WrongExpected(")", lex);
 
 		return semTree->GetFuncReturn(funcNode);
 	}
 	
-	auto data = PrimExpr();
+	auto data = UnaryNot();
 	lex = scanner->LookForward(1);
 	while (lex.type == LexemeType::Inc
 		|| lex.type == LexemeType::Dec)
 	{
-		lex = scanner->NextScan();										// Scan ++, --
+		lex = scanner->NextScan();								// Scan ++, --
 
 		auto resData = semTree->GetResultData(data, lex.type);
 		if (resData == nullptr)
@@ -583,6 +610,22 @@ Data* SyntaxAnalyser::PostfixExpr()
 	return data;
 }
 
+Data* SyntaxAnalyser::UnaryNot()
+{
+	auto lex = scanner->LookForward(1);
+
+	if (lex.type == LexemeType::Not)
+	{
+		lex = scanner->NextScan();								// Scan !
+		auto right = Expr();
+		
+		right->SetValue(!(right->GetValueToInt()));				// not
+		return right;
+	}
+
+	return PrimExpr();
+}
+
 
 Data* SyntaxAnalyser::PrimExpr()
 {
@@ -590,11 +633,11 @@ Data* SyntaxAnalyser::PrimExpr()
 
 	if (lex.type == LexemeType::OpenPar)
 	{
-		const auto resType = Expr();
+		const auto resData = Expr();
 		lex = scanner->NextScan();
 		if (lex.type != LexemeType::ClosePar)
 			WrongExpected(")", lex);
-		return resType;
+		return resData;
 	}
 
 	if (lex.type == LexemeType::Id || lex.type == LexemeType::Main) 
@@ -607,7 +650,7 @@ Data* SyntaxAnalyser::PrimExpr()
 		if (!semTree->GetVariableInitialized(node))
 			VarIsNotInitError(node->Identifier, lex);
 
-		return node->GetData();
+		return new Data(node->GetData());
 	}
 
 	if (lex.type == LexemeType::ConstInt || lex.type == LexemeType::ConstBool)
@@ -616,7 +659,7 @@ Data* SyntaxAnalyser::PrimExpr()
 		if (numData == nullptr)
 			WrongNumber(lex);
 
-		return numData;
+		return new Data(numData);
 	}
 
 	ThrowError("Неизвестное выражение: " + lex.str, lex);

@@ -76,6 +76,12 @@ struct Data
 		}
 	}
 
+	Data(Data* data)
+	{
+		this->Type = data->Type;
+		this->SetValue(data->GetValueToInt());
+	}
+
 	~Data()
 	{
 		if (Value != nullptr)
@@ -101,7 +107,7 @@ struct Data
 		}		
 	}
 
-	std::string GetValue() const
+	std::string GetValueToString() const
 	{
 		switch (Type)
 		{
@@ -115,6 +121,23 @@ struct Data
 				return "False";
 		default:
 			return "null";
+		}
+	}
+
+	int GetValueToInt() const
+	{
+		switch (Type)
+		{
+		case DataType::Int:
+			return Value->integer;
+
+		case DataType::Bool:
+			if (Value->boolean == true)
+				return 1;
+			else
+				return 0;
+		default:
+			return NULL;
 		}
 	}
 

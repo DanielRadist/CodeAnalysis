@@ -33,7 +33,7 @@ enum class LexemeType : unsigned int
 	Assign = 35,	// =
 	Inc = 36,		// ++
 	Dec = 37,		// --
-	NE = 38,		// !-
+	NE = 38,		// !=
 	LT = 39,		// <
 	RT = 40,		// >
 	LTE = 41,		// <=
@@ -53,6 +53,13 @@ enum class LexemeType : unsigned int
 
 	And = 53,		// &&
 	Or = 54,		// ||
+	Not = 55,		// !
+
+	AddAssign = 56,	// +=
+	SubAssign = 57,	// -=
+	MulAssign = 58,	// *=
+	DivAssign = 59,	// /=
+	ModAssign = 60,	// %=
 
 	End = 100,		// \0
 	Err = 999		// error

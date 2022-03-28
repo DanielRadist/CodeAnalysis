@@ -57,6 +57,7 @@ void SemanticTree::SetVariableValue(Node* varNode, Data* data)
 {
 	dynamic_cast<DataNode*>(varNode)->IsInitialized = true;
 	Data::CastingTypes(dynamic_cast<DataNode*>(varNode)->Value, data);
+	delete data;
 }
 
 void SemanticTree::SetFuncReturn(Node* funcNode, int value)
@@ -71,13 +72,73 @@ Data* SemanticTree::GetResultData(Data* leftData, Data* rightData, LexemeType op
 		|| leftData->Type == DataType::Unknown || rightData->Type == DataType::Unknown)
 		return nullptr;
 
-	if (operation == LexemeType::EQ || operation == LexemeType::NE || operation == LexemeType::And || operation == LexemeType::Or
+	if (operation == LexemeType::EQ || operation == LexemeType::NE || 
+		operation == LexemeType::And || operation == LexemeType::Or
 		|| operation == LexemeType::LT || operation == LexemeType::RT
 		|| operation == LexemeType::LTE || operation == LexemeType::RTE)
-		return new Data(DataType::Bool, 0);					// TODO: временно (доделать в 4 лабе)
+	{
+		bool value;
+		switch (operation)
+		{
+		case LexemeType::NE:	// !=
+			value = leftData->GetValueToInt() != rightData->GetValueToInt();
+			break;
+		case LexemeType::LT:	// <
+			value = leftData->GetValueToInt() < rightData->GetValueToInt();
+			break;
+		case LexemeType::RT:	// >
+			value = leftData->GetValueToInt() > rightData->GetValueToInt();
+			break;
+		case LexemeType::LTE:	// <=
+			value = leftData->GetValueToInt() <= rightData->GetValueToInt();
+			break;
+		case LexemeType::RTE:	// >=
+			value = leftData->GetValueToInt() >= rightData->GetValueToInt();
+			break;
+		case LexemeType::EQ:	// ==
+			value = leftData->GetValueToInt() == rightData->GetValueToInt();
+			break;
+		case LexemeType::And:	// &&
+			value = leftData->GetValueToInt() && rightData->GetValueToInt();
+			break;
+		case LexemeType::Or:	// ||
+			value = leftData->GetValueToInt() || rightData->GetValueToInt();
+			break;
+		default:
+			break;
+		}
+
+		leftData->SetValue(value);
+		return leftData;
+	}
 
 	if (leftData->Type == DataType::Int || rightData->Type == DataType::Int)
-		return new Data(DataType::Int, 0);					// TODO: временно (доделать в 4 лабе)
+	{
+		int value;
+		switch (operation)
+		{
+		case LexemeType::Add:
+			value = leftData->GetValueToInt() + rightData->GetValueToInt();
+			break;
+		case LexemeType::Sub:
+			value = leftData->GetValueToInt() - rightData->GetValueToInt();
+			break;
+		case LexemeType::Mul:
+			value = leftData->GetValueToInt() * rightData->GetValueToInt();
+			break;
+		case LexemeType::Div:
+			value = leftData->GetValueToInt() / rightData->GetValueToInt();
+			break;
+		case LexemeType::Mod:
+			value = leftData->GetValueToInt() % rightData->GetValueToInt();
+			break;
+		default:
+			break;
+		}
+
+		leftData->SetValue(value);
+		return leftData;
+	}
 
 	return nullptr;
 }
@@ -86,7 +147,18 @@ Data* SemanticTree::GetResultData(Data* data, LexemeType operation)
 {
 	if (data->Type == DataType::Void || data->Type == DataType::Unknown)
 		return nullptr;
-	return data;
+
+	switch (operation)
+	{
+	case LexemeType::Inc:	// ++
+		data->SetValue(data->GetValueToInt() + 1);
+		return data;
+	case LexemeType::Dec:	// --
+		data->SetValue(data->GetValueToInt() - 1);
+		return data;
+	default:
+		return data;
+	}
 }
 
 Data* SemanticTree::GetDataOfNum(Lexeme lex)

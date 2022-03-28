@@ -20,18 +20,18 @@ private:
 	void CompStat();
 	void Switch();
 
-	DataType Expr();
-	DataType OrExpr();
-	DataType AndExpr();
-	DataType EqualExpr();
-	DataType CmpExpr();
-	DataType AddExpr();
-	DataType MultExpr();
-	DataType PrefixExpr();
-	DataType PostfixExpr();
-	DataType PrimExpr();
+	Data* Expr();
+	Data* OrExpr();
+	Data* AndExpr();
+	Data* EqualExpr();
+	Data* CmpExpr();
+	Data* AddExpr();
+	Data* MultExpr();
+	Data* PrefixExpr();
+	Data* PostfixExpr();
+	Data* PrimExpr();
 
-	DataType CheckOperationResult(DataType leftType, DataType rightType, const Lexeme& lex) const;
+	Data* CheckOperationResult(Data* left, Data* right, const Lexeme& lex) const;
 
 	[[noreturn]] static void ThrowError(const std::string& mes, const Lexeme& lex);
 	[[noreturn]] static void WrongId(const Lexeme& lex);

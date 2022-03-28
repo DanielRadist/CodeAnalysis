@@ -3,6 +3,8 @@
 #include <string>
 #include <utility>
 
+#include "Data.h"
+
 struct Node
 {
 	Node(std::string id, Node* parent) :Parent(parent), Identifier(std::move(id)) {}
@@ -21,6 +23,7 @@ struct Node
 	}
 
 	virtual DataType GetDataType() const = 0;
+	virtual Data* GetData() = 0;
 	virtual SemanticType GetSemanticType() const = 0;
 
 	Node* Parent = nullptr;

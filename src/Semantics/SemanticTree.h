@@ -15,22 +15,24 @@ public:
 
 	Node* AddData(DataType type, const std::string& id);
 	static void SetDataConst(Node* varNode);
-	static void SetVariableInitialized(Node* varNode);
+	//static void SetVariableInitialized(Node* varNode);
 	static bool GetVariableInitialized(Node* varNode);
 	bool CheckUniqueIdentifier( const std::string& id) const;
 	bool CheckDefinedIdentifier( const std::string& id) const;
 	static bool CheckCastable(DataType from, DataType to);
 
 	static void SetVariableValue(Node* varNode, int value);
+	static void SetVariableValue(Node* varNode, Data* data);
 	static void SetFuncReturn(Node* funcNode, int value);
 
-	static DataType GetResultDataType(DataType leftType, DataType rightType, LexemeType operation);
-	static DataType GetResultDataType(DataType type,  LexemeType operation);
-	DataType GetDataTypeOfNum(Lexeme lex);
+	static Data* GetResultData(Data* leftType, Data* rightType, LexemeType operation);
+	static Data* GetResultData(Data* type, LexemeType operation);
+	Data* GetDataOfNum(Lexeme lex);
 
 	Node* AddFunc(DataType type, const std::string& id);
 	void AddParam(Node* funcNode, const std::string& id, DataType type);
 	static std::vector<DataType> GetFuncParams(Node* funcNode);
+	static Data* GetFuncReturn(Node* funcNode);
 
 	Node* AddEmpty();
 

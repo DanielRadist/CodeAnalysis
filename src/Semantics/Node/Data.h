@@ -13,6 +13,7 @@ union DataValue
 	{
 		this->boolean = value;
 	}
+
 	bool boolean;
 	int integer;
 };
@@ -94,14 +95,6 @@ struct Data
 			Value = new DataValue((bool)value);
 			break;
 
-		case DataType::Void:
-			Value = nullptr;
-			break;
-
-		case DataType::Unknown:
-			Value = nullptr;
-			break;
-
 		default:
 			Value = nullptr;
 			break;
@@ -125,8 +118,23 @@ struct Data
 		}
 	}
 
-//protected:
-	DataValue *Value;
+	static void CastingTypes(Data* recipient, Data* sender)
+	{
+		switch (sender->Type)
+		{
+		case DataType::Int:
+			recipient->SetValue(sender->Value->integer);
+			break;
+		case DataType::Bool:
+			recipient->SetValue(sender->Value->boolean);
+			break;
+		default:
+			recipient->Value = nullptr;
+			break;
+		}
+	}
+
+	DataValue* Value = nullptr;
 
 	DataType Type;
 };

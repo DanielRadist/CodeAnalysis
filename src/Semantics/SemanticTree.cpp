@@ -30,10 +30,11 @@ void SemanticTree::SetDataConst(Node* varNode)
 	dynamic_cast<DataNode*>(varNode)->IsConst = true;
 }
 
+/*
 void SemanticTree::SetVariableInitialized(Node* varNode)
 {
 	dynamic_cast<DataNode*>(varNode)->IsInitialized = true;
-}
+}*/
 
 bool SemanticTree::GetVariableInitialized(Node* varNode)
 {
@@ -48,59 +49,71 @@ bool SemanticTree::CheckUniqueIdentifier(const std::string& id) const
 
 void SemanticTree::SetVariableValue(Node* varNode, int value)
 {
-	dynamic_cast<DataNode*>(varNode)->Value.SetValue(value);
+	dynamic_cast<DataNode*>(varNode)->IsInitialized = true;
+	dynamic_cast<DataNode*>(varNode)->Value->SetValue(value);
+}
+
+void SemanticTree::SetVariableValue(Node* varNode, Data* data)
+{
+	dynamic_cast<DataNode*>(varNode)->IsInitialized = true;
+	Data::CastingTypes(dynamic_cast<DataNode*>(varNode)->Value, data);
 }
 
 void SemanticTree::SetFuncReturn(Node* funcNode, int value)
 {
-	dynamic_cast<DataNode*>(funcNode)->Value.SetValue(value);
+	dynamic_cast<DataNode*>(funcNode)->Value->SetValue(value);
 }
 
 
-DataType SemanticTree::GetResultDataType(DataType leftType, DataType rightType, LexemeType operation)
+Data* SemanticTree::GetResultData(Data* leftData, Data* rightData, LexemeType operation)
 {
-	if (leftType == DataType::Void || rightType == DataType::Void
-		|| leftType == DataType::Unknown || rightType == DataType::Unknown)
-		return DataType::Unknown;
+	if (leftData->Type == DataType::Void || rightData->Type == DataType::Void
+		|| leftData->Type == DataType::Unknown || rightData->Type == DataType::Unknown)
+		return nullptr;
 
-	if (operation == LexemeType::EQ || operation == LexemeType::NE
+	if (operation == LexemeType::EQ || operation == LexemeType::NE || operation == LexemeType::And || operation == LexemeType::Or
 		|| operation == LexemeType::LT || operation == LexemeType::RT
 		|| operation == LexemeType::LTE || operation == LexemeType::RTE)
-		return DataType::Bool;
+		return new Data(DataType::Bool, 0);					// TODO: временно (доделать в 4 лабе)
 
-	if (leftType == DataType::Long || rightType == DataType::Long)
-		return DataType::Long;
-	return DataType::Int;
+	if (leftData->Type == DataType::Int || rightData->Type == DataType::Int)
+		return new Data(DataType::Int, 0);					// TODO: временно (доделать в 4 лабе)
+
+	return nullptr;
 }
 
-DataType SemanticTree::GetResultDataType(DataType type, LexemeType operation)
+Data* SemanticTree::GetResultData(Data* data, LexemeType operation)
 {
-	if (type == DataType::Void || type == DataType::Unknown)
-		return DataType::Unknown;
-	return type;
+	if (data->Type == DataType::Void || data->Type == DataType::Unknown)
+		return nullptr;
+	return data;
 }
 
-DataType SemanticTree::GetDataTypeOfNum(Lexeme lex)
+Data* SemanticTree::GetDataOfNum(Lexeme lex)
 {
-	static std::string MAX_SHORT = "32767";
+	static std::string TRUE = "true";
+	static std::string FALSE = "false";
+
 	static std::string MAX_INT = "2147483647";
-	static std::string MAX_LONG = "9223372036854775807";
-	if (lex.type == LexemeType::ConstInt)
-	{
-		if (lex.str.size() < MAX_SHORT.size() || lex.str <= MAX_SHORT)
-			return DataType::Short;
-		if (lex.str.size() < MAX_INT.size() || lex.str <= MAX_INT)
-			return DataType::Int;
-		if (lex.str.size() < MAX_LONG.size() || lex.str <= MAX_LONG)
-			return DataType::Long;
-		return  DataType::Unknown;
-	}
+
 	if (lex.type == LexemeType::ConstBool)
 	{
-		return DataType::Bool;
+		if (lex.str == TRUE)
+			return new Data(DataType::Bool, 1);
+		else if (lex.str == FALSE)
+			return new Data(DataType::Bool, 0);
 	}
-	return DataType::Unknown;
 
+	else if (lex.type == LexemeType::ConstInt && lex.str.size() < MAX_INT.size())
+	{
+		size_t offset = 0;
+		if (lex.str[offset] == '-')
+			offset++;
+
+		if (lex.str.find_first_not_of("0123456789", offset) == std::string::npos)
+			return new Data(DataType::Int, stoi((lex.str)));
+	}
+	return nullptr;
 }
 
 bool SemanticTree::CheckDefinedIdentifier(const std::string& id) const
@@ -137,7 +150,7 @@ void SemanticTree::AddParam(Node* funcNode, const std::string& id, DataType type
 	auto func = dynamic_cast<FuncNode*>(funcNode);
 	func->ParamsCount++;
 	auto node = AddData(type, id);
-	SetVariableInitialized(node);
+	SetVariableValue(node, 0);
 }
 
 std::vector<DataType> SemanticTree::GetFuncParams(Node* funcNode)
@@ -151,6 +164,12 @@ std::vector<DataType> SemanticTree::GetFuncParams(Node* funcNode)
 		paramNode = paramNode->LeftChild.get();
 	}
 	return paramsTypes;
+}
+
+Data* SemanticTree::GetFuncReturn(Node* funcNode)
+{
+	auto func = dynamic_cast<FuncNode*>(funcNode);
+	return func->Value;
 }
 
 void SemanticTree::AddScope()

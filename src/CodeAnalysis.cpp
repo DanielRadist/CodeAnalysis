@@ -105,12 +105,15 @@ void SyntaxAnalyser::DataDecl()
 
 		if (lex.type == LexemeType::Assign) 
 		{
-			const auto rightType = Expr();						// Получаем тип правой части
+			if (lex.pos.column == 21)
+				int a = 1;
 
-			if (!semTree->CheckCastable(rightType, leftType))	// проверяем на совместимость типов
-				UncastableError(leftType, rightType, lex);
+			const auto rightData = Expr();						// Получаем тип правой части
 
-			semTree->SetVariableInitialized(varNode);			// сообщаем о иниализации переменной
+			if (!semTree->CheckCastable(rightData->Type, leftType))	// проверяем на совместимость типов
+				UncastableError(leftType, rightData->Type, lex);
+
+			semTree->SetVariableValue(varNode, rightData);		// сообщаем о иниализации переменной
 
 			lex = scanner->NextScan();							//Scan  ',', ';'
 		}
@@ -183,10 +186,10 @@ void SyntaxAnalyser::ConstDecl()
 	if (lex.type != LexemeType::ConstInt && lex.type != LexemeType::ConstBool)
 		WrongExpected("Константа", lex);
 
-	const auto rightType = semTree->GetDataTypeOfNum(lex);
-	if (!semTree->CheckCastable(rightType, leftType))			// Проверка приводимости типов
-		UncastableError(leftType, rightType, lex);
-	semTree->SetVariableInitialized(constNode);
+	const auto rightData = semTree->GetDataOfNum(lex);
+	if (!semTree->CheckCastable(rightData->Type, leftType))		// Проверка приводимости типов
+		UncastableError(leftType, rightData->Type, lex);
+	semTree->SetVariableValue(constNode, rightData);
 
 	scanner->NextScan();
 
@@ -347,7 +350,7 @@ void SyntaxAnalyser::Switch()
 }
 
 
-DataType SyntaxAnalyser::Expr()
+Data* SyntaxAnalyser::Expr()
 {
 	auto lex = scanner->LookForward(2);
 	if (lex.type == LexemeType::Assign)
@@ -363,130 +366,131 @@ DataType SyntaxAnalyser::Expr()
 			AssignToFuncError(lex);
 
 
-		const auto leftType = node->GetDataType();					// Получить тип данных левой части
-		const auto leftTypeData = node->GetSemanticType();
+		const auto left = node->GetData();							// Получить тип и значение данных левой части
+		const auto leftSemanticType = node->GetSemanticType();
 
 		lex = scanner->NextScan();									// Scan =
 
-		const auto rightType = EqualExpr();							// Получить тип из дерева правого выражения
+		const auto right = EqualExpr();								// Получить тип из дерева правого выражения
 
-		if (!semTree->CheckCastable(rightType, leftType))			// если не приводятся или попытка присвоить константе
-			UncastableError(leftType, rightType, lex);
-		if (leftTypeData == SemanticType::Const)
-			UncastableConstError(leftType, rightType, lex);
+		if (!semTree->CheckCastable(right->Type, left->Type))		// если не приводятся или попытка присвоить константе
+			UncastableError(left->Type, right->Type, lex);
+		if (leftSemanticType == SemanticType::Const)
+			UncastableConstError(left->Type, right->Type, lex);
 
-		semTree->SetVariableInitialized(node);
+		//semTree->SetVariableInitialized(node);
+		semTree->SetVariableValue(node, right);						
 
-		return leftType;
+		return left;
 	}
 	return OrExpr();
 }
 
-DataType SyntaxAnalyser::OrExpr()
+Data* SyntaxAnalyser::OrExpr()
 {
-	auto leftType = AndExpr();
+	auto left = AndExpr();
 	auto lex = scanner->LookForward(1);
 	while (lex.type == LexemeType::Or)
 	{
 		scanner->NextScan();
-		const auto rightType = AndExpr();
+		const auto right = AndExpr();
 
-		leftType = CheckOperationResult(leftType, rightType, lex);
+		left = CheckOperationResult(left, right, lex);
 
 		lex = scanner->LookForward(1);
 	}
 
-	return leftType;
+	return left;
 }
 
-DataType SyntaxAnalyser::AndExpr()
+Data* SyntaxAnalyser::AndExpr()
 {
-	auto leftType = EqualExpr();
+	auto left = EqualExpr();
 	auto lex = scanner->LookForward(1);
 	while (lex.type == LexemeType::And)
 	{
 		scanner->NextScan();
-		const auto rightType = EqualExpr();
+		const auto right = EqualExpr();
 
-		leftType = CheckOperationResult(leftType, rightType, lex);
+		left = CheckOperationResult(left, right, lex);
 
 		lex = scanner->LookForward(1);
 	}
 
-	return leftType;
+	return left;
 }
 
 
 
-DataType SyntaxAnalyser::EqualExpr()
+Data* SyntaxAnalyser::EqualExpr()
 {
-	auto leftType = CmpExpr();										
+	auto left = CmpExpr();										
 	auto lex = scanner->LookForward(1);
 	while (lex.type == LexemeType::EQ || lex.type == LexemeType::NE)
 	{
 		lex = scanner->NextScan();									// Scan ==, !=
-		const auto rightType = CmpExpr();							
+		const auto right = CmpExpr();							
 
-		leftType = CheckOperationResult(leftType, rightType, lex);	
+		left = CheckOperationResult(left, right, lex);	
 
 		lex = scanner->LookForward(1);
 	}
-	return leftType;
+	return left;
 }
 
-DataType SyntaxAnalyser::CmpExpr()
+Data* SyntaxAnalyser::CmpExpr()
 {
-	auto leftType = AddExpr();										
+	auto left = AddExpr();										
 	auto lex = scanner->LookForward(1);
 	while (lex.type == LexemeType::LT || lex.type == LexemeType::RT
 		|| lex.type == LexemeType::LTE || lex.type == LexemeType::RTE)
 	{
 		lex = scanner->NextScan();									// Scan >, >=, <, <=
-		const auto rightType = AddExpr();							
+		const auto right = AddExpr();							
 
-		leftType = CheckOperationResult(leftType, rightType, lex);	
+		left = CheckOperationResult(left, right, lex);	
 
 		lex = scanner->LookForward(1);
 	}
-	return leftType;
+	return left;
 }
 
-DataType SyntaxAnalyser::AddExpr()
+Data* SyntaxAnalyser::AddExpr()
 {
-	auto leftType = MultExpr();										
+	auto left = MultExpr();										
 	auto lex = scanner->LookForward(1);
 	while (lex.type == LexemeType::Add
 		|| lex.type == LexemeType::Sub)
 	{
 		scanner->NextScan();										// Scan +, -
-		const auto rightType = MultExpr();							
+		const auto right = MultExpr();							
 
-		leftType = CheckOperationResult(leftType, rightType, lex);	
+		left = CheckOperationResult(left, right, lex);	
 
 		lex = scanner->LookForward(1);
 	}
-	return leftType;
+	return left;
 }
 
-DataType SyntaxAnalyser::MultExpr()
+Data* SyntaxAnalyser::MultExpr()
 {
-	auto leftType = PrefixExpr();									
+	auto left = PrefixExpr();									
 	auto lex = scanner->LookForward(1);
 	while (lex.type == LexemeType::Mul
 		|| lex.type == LexemeType::Div
 		|| lex.type == LexemeType::Mod)
 	{
 		scanner->NextScan();										// Scan *, /, %
-		const auto rightType = PrefixExpr();						
+		const auto right = PrefixExpr();						
 
-		leftType = CheckOperationResult(leftType, rightType, lex);	
+		left = CheckOperationResult(left, right, lex);	
 
 		lex = scanner->LookForward(1);
 	}
-	return leftType;
+	return left;
 }
 
-DataType SyntaxAnalyser::PrefixExpr()
+Data* SyntaxAnalyser::PrefixExpr()
 {
 	auto lex = scanner->LookForward(1);
 	std::stack<Lexeme> ops;
@@ -497,20 +501,20 @@ DataType SyntaxAnalyser::PrefixExpr()
 		ops.push(lex);
 		lex = scanner->LookForward(1);
 	}
-	auto type = PostfixExpr();
+	auto data = PostfixExpr();
 
 	while (!ops.empty())
 	{
-		const auto resType = semTree->GetResultDataType(type, ops.top().type);
-		if (resType == DataType::Unknown)
-			OperationArgsError(type, ops.top().str, ops.top());
+		const auto resType = semTree->GetResultData(data, ops.top().type);
+		if (resType == nullptr)
+			OperationArgsError(data->Type, ops.top().str, ops.top());
 		ops.pop();
-		type = resType;
+		data = resType;
 	}
-	return type;
+	return data;
 }
 
-DataType SyntaxAnalyser::PostfixExpr()
+Data* SyntaxAnalyser::PostfixExpr()
 {
 	auto lex = scanner->LookForward(1);
 	auto lex2 = scanner->LookForward(2);
@@ -536,10 +540,10 @@ DataType SyntaxAnalyser::PostfixExpr()
 			while (true)
 			{
 				lex = scanner->LookForward(1);						
-				auto type = Expr();								
+				auto data = Expr();								
 
-				if (argsCount < paramsTypes.size() && !semTree->CheckCastable(type, paramsTypes[argsCount]))
-					WrongArgType(paramsTypes[argsCount], type, argsCount + 1, lex);
+				if (argsCount < paramsTypes.size() && !semTree->CheckCastable(data->Type, paramsTypes[argsCount]))
+					WrongArgType(paramsTypes[argsCount], data->Type, argsCount + 1, lex);
 
 				++argsCount;
 
@@ -558,29 +562,29 @@ DataType SyntaxAnalyser::PostfixExpr()
 		if (lex.type != LexemeType::ClosePar)
 			WrongExpected(")", lex);
 
-		return DataType::Void;
+		return semTree->GetFuncReturn(funcNode);
 	}
 	
-	auto type = PrimExpr();
+	auto data = PrimExpr();
 	lex = scanner->LookForward(1);
 	while (lex.type == LexemeType::Inc
 		|| lex.type == LexemeType::Dec)
 	{
 		lex = scanner->NextScan();										// Scan ++, --
 
-		auto resType = semTree->GetResultDataType(type, lex.type);
-		if (resType == DataType::Unknown)
-			OperationArgsError(type, lex.str, lex);
+		auto resData = semTree->GetResultData(data, lex.type);
+		if (resData == nullptr)
+			OperationArgsError(data->Type, lex.str, lex);
 
-		type = resType;
+		data = resData;
 
 		lex = scanner->LookForward(1);
 	}
-	return type;
+	return data;
 }
 
 
-DataType SyntaxAnalyser::PrimExpr()
+Data* SyntaxAnalyser::PrimExpr()
 {
 	auto lex = scanner->NextScan();								// Const, Id, Main, (
 
@@ -603,27 +607,27 @@ DataType SyntaxAnalyser::PrimExpr()
 		if (!semTree->GetVariableInitialized(node))
 			VarIsNotInitError(node->Identifier, lex);
 
-		return node->GetDataType();
+		return node->GetData();
 	}
 
 	if (lex.type == LexemeType::ConstInt || lex.type == LexemeType::ConstBool)
 	{
-		const auto numType = semTree->GetDataTypeOfNum(lex);
-		if (numType == DataType::Unknown)
+		const auto numData = semTree->GetDataOfNum(lex);
+		if (numData == nullptr)
 			WrongNumber(lex);
 
-		return numType;
+		return numData;
 	}
 
 	ThrowError("Неизвестное выражение: " + lex.str, lex);
 }
 
-DataType SyntaxAnalyser::CheckOperationResult(DataType leftType, DataType rightType, const Lexeme& lex) const
+Data* SyntaxAnalyser::CheckOperationResult(Data* left, Data* right, const Lexeme& lex) const
 {
-	const auto resType = semTree->GetResultDataType(leftType, rightType, lex.type);
-	if (resType == DataType::Unknown)
-		OperationArgsError(leftType, rightType, lex.str, lex);
-	return resType;
+	const auto resData = semTree->GetResultData(left, right, lex.type);
+	if (resData == nullptr)
+		OperationArgsError(left->Type, right->Type, lex.str, lex);
+	return resData;
 }
 
 
